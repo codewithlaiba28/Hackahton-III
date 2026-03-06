@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import httpx
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import shared components
 import sys
@@ -24,6 +25,15 @@ app = FastAPI(
     title="LearnFlow Concepts Agent",
     description="AI-powered Python concepts explainer",
     version="1.0.0"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Frontend origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Cerebras Configuration

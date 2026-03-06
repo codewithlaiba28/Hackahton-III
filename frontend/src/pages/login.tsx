@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { signIn } from '@/lib/auth-client';
 import {
   Bot,
   Mail,
@@ -32,27 +31,36 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { data, error: authError } = await signIn.email({
-        email,
-        password,
-        callbackURL: role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'
+      // Call our backend API directly
+      const response = await fetch('http://localhost:8001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
 
-      if (authError) {
-        throw new Error(authError.message || 'Authentication failed');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Login failed');
       }
 
-      // If we're here and no error, redirect based on ACTUAL user role in DB
-      if (data?.user) {
-        const dbRole = (data.user as any).role?.toLowerCase();
-        if (dbRole === 'teacher') {
-          router.push('/teacher/dashboard');
-        } else {
-          router.push('/student/dashboard');
-        }
+      // Store the token and user info
+      localStorage.setItem('learnflow_token', data.access_token);
+      localStorage.setItem('learnflow_user', JSON.stringify(data.user));
+
+      // Redirect based on role
+      const userRole = data.user.role?.toLowerCase();
+      if (userRole === 'teacher' || userRole === 'instructor') {
+        router.push('/teacher/dashboard');
+      } else {
+        router.push('/student/dashboard');
       }
     } catch (err: any) {
-
       setError(err.message || 'Neural link synchronization failed. Verification required.');
       console.error('Login error:', err);
     } finally {

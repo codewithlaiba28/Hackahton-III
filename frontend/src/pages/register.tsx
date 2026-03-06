@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { signUp } from '@/lib/auth-client';
 import {
     User as UserIcon,
     Mail,
@@ -32,28 +31,38 @@ export default function RegisterPage() {
         setIsLoading(true);
 
         try {
-            const { data, error: authError } = await signUp.email({
-                email,
-                password,
-                name,
-                role: role.toUpperCase(), // Pass additional fields at the root level
-                callbackURL: role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'
-            } as any); // Cast to any to bypass strict type checking until types are regenerated
+            // Call our backend API directly instead of Better Auth client
+            const response = await fetch('http://localhost:8001/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    name,
+                    role: role,
+                }),
+            });
 
+            const data = await response.json();
 
-            if (authError) {
-                throw new Error(authError.message || 'Registration failed');
+            if (!response.ok) {
+                throw new Error(data.detail || 'Registration failed');
             }
 
-            // Redirect is handled by callbackURL, but adding a fallback just in case
-            // If data is returned, we are already signed in
-            if (data?.user) {
-                const finalRole = (data.user as any).role?.toLowerCase() || role;
-                router.push(finalRole === 'teacher' ? '/teacher/dashboard' : '/student/dashboard');
+            // Store the token and user info
+            localStorage.setItem('learnflow_token', data.access_token);
+            localStorage.setItem('learnflow_user', JSON.stringify(data.user));
+
+            // Redirect based on role
+            const userRole = data.user.role?.toLowerCase() || role;
+            if (userRole === 'teacher' || userRole === 'instructor') {
+                router.push('/teacher/dashboard');
+            } else {
+                router.push('/student/dashboard');
             }
         } catch (err: any) {
-
-
             setError(err.message || 'Neural link initialization failed.');
         } finally {
             setIsLoading(false);

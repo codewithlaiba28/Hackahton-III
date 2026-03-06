@@ -49,11 +49,12 @@ app.add_middleware(
 # Use the get_password_hash from shared.auth directly
 
 # Agent service URLs (configured via environment or Dapr service discovery)
-CONCEPTS_AGENT_URL = os.getenv("CONCEPTS_AGENT_URL", "http://localhost:8002")
-DEBUG_AGENT_URL = os.getenv("DEBUG_AGENT_URL", "http://localhost:8003")
-EXERCISE_AGENT_URL = os.getenv("EXERCISE_AGENT_URL", "http://localhost:8004")
-CODE_REVIEW_AGENT_URL = os.getenv("CODE_REVIEW_AGENT_URL", "http://localhost:8006")
-PROGRESS_AGENT_URL = os.getenv("PROGRESS_AGENT_URL", "http://localhost:8005")
+# Default to Docker service names for container-to-container communication
+CONCEPTS_AGENT_URL = os.getenv("CONCEPTS_AGENT_URL", "http://concepts-agent:8000")
+DEBUG_AGENT_URL = os.getenv("DEBUG_AGENT_URL", "http://debug-agent:8000")
+EXERCISE_AGENT_URL = os.getenv("EXERCISE_AGENT_URL", "http://exercise-agent:8000")
+CODE_REVIEW_AGENT_URL = os.getenv("CODE_REVIEW_AGENT_URL", "http://code-review-agent:8000")
+PROGRESS_AGENT_URL = os.getenv("PROGRESS_AGENT_URL", "http://progress-agent:8000")
 
 class LoginRequest(BaseModel):
     email: str

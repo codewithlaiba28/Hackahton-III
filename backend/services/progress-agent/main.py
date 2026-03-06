@@ -7,12 +7,16 @@ from datetime import datetime
 import uuid
 import httpx
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import shared components
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.database import get_db, engine, Base
-from shared.models import Progress, User, MasteryStatus, UserRole, QuizResult, Submission, StruggleEvent
+from shared.models import Progress, User, QuizResult, Submission, StruggleEvent
+
+# Define status constants
+MASTERY_STATUS = ['beginner', 'learning', 'proficient', 'mastered']
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +37,15 @@ app = FastAPI(
     title="LearnFlow Progress Agent",
     description="Student progress tracking and mastery calculation",
     version="1.0.0"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Frontend origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -115,16 +128,16 @@ def calculate_mastery_score(
     
     return min(100, max(0, mastery))
 
-def get_mastery_status_enum(score: float) -> MasteryStatus:
-    """Get mastery status from score"""
+def get_mastery_status_label(score: float) -> str:
+    """Get mastery status label from score"""
     if score <= 40:
-        return MasteryStatus.BEGINNER
+        return 'beginner'
     elif score <= 70:
-        return MasteryStatus.LEARNING
+        return 'learning'
     elif score <= 90:
-        return MasteryStatus.PROFICIENT
+        return 'proficient'
     else:
-        return MasteryStatus.MASTERED
+        return 'mastered'
 
 @app.get("/health")
 async def health_check():
@@ -163,7 +176,7 @@ async def update_progress(request: ProgressUpdate, db: Session = Depends(get_db)
                 module_id=request.module_id,
                 topic=request.topic,
                 mastery_score=0.0,
-                status=MasteryStatus.BEGINNER,
+                status='beginner',
                 exercises_completed=0,
                 quizzes_completed=0
             )
@@ -192,13 +205,13 @@ async def update_progress(request: ProgressUpdate, db: Session = Depends(get_db)
             (progress.quality_avg * 0.2) +
             (progress.streak_score * 0.1)
         )
-        
-        progress.status = get_mastery_status_enum(progress.mastery_score)
+
+        progress.status = get_mastery_status_label(progress.mastery_score)
         progress.updated_at = datetime.utcnow()
-        
+
         db.commit()
         db.refresh(progress)
-        
+
         return {
             "success": True,
             "user_id": request.user_id,
