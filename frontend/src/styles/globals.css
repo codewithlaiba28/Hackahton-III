@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700;900&family=Syne:wght@400;700;800&family=JetBrains+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono&display=swap');
 @import "tailwindcss";
 
 
@@ -41,7 +41,7 @@
   --radius-lg: var(--radius);
   --radius: 0.75rem;
 
-  --font-display: 'Bebas Neue', 'Syne', sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -60,6 +60,8 @@ body {
   color: var(--color-foreground);
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
   overflow-x: hidden;
 }
 
@@ -69,8 +71,9 @@ h3,
 h4,
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.01em;
+  letter-spacing: normal;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 code,
