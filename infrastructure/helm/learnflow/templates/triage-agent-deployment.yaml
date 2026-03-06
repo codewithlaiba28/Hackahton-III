@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-triage-agent
+  labels:
+    app: triage-agent
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.backend.triageAgent.replicas }}
+  selector:
+    matchLabels:
+      app: triage-agent
+  template:
+    metadata:
+      labels:
+        app: triage-agent
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: triage-agent
+          image: "{{ .Values.backend.triageAgent.image.repository }}:{{ .Values.backend.triageAgent.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.triageAgent.port }}
+              protocol: TCP
+          env:
+            - name: APP_ENV
+              value: {{ .Values.env.APP_ENV }}
+            - name: LOG_LEVEL
+              value: {{ .Values.logging.level }}
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: jwt-secret-key
+            - name: CONCEPTS_AGENT_URL
+              value: "http://{{ .Release.Name }}-concepts-agent:{{ .Values.backend.conceptsAgent.port }}"
+            - name: DEBUG_AGENT_URL
+              value: "http://{{ .Release.Name }}-debug-agent:{{ .Values.backend.debugAgent.port }}"
+            - name: EXERCISE_AGENT_URL
+              value: "http://{{ .Release.Name }}-exercise-agent:{{ .Values.backend.exerciseAgent.port }}"
+          resources: {{- toYaml .Values.backend.triageAgent.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-triage-agent
+  labels:
+    app: triage-agent
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.backend.triageAgent.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: triage-agent

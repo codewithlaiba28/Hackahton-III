@@ -1,0 +1,39 @@
+"""
+LearnFlow Shared Database Utility
+SQLAlchemy engine and session management for all backend services
+"""
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import QueuePool
+
+# Database URL from environment
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "postgresql://learnflow:learnflow-password@localhost:5432/learnflow"
+)
+
+# SQLAlchemy engine with connection pooling
+engine = create_engine(
+    DATABASE_URL,
+    poolclass=QueuePool,
+    pool_size=int(os.getenv("DATABASE_POOL_SIZE", "5")),
+    max_overflow=int(os.getenv("DATABASE_MAX_OVERFLOW", "10")),
+    pool_timeout=30,
+    pool_recycle=1800,
+)
+
+# Session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Base class for declarative models
+Base = declarative_base()
+
+def get_db():
+    """Dependency for getting database session"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

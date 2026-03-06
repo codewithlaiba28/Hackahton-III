@@ -1,0 +1,55 @@
+{{- if .Values.apiGateway.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.apiGateway.name }}
+  labels:
+    app: {{ .Values.apiGateway.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.apiGateway.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.apiGateway.name }}
+    spec:
+      containers:
+        - name: kong
+          image: "{{ .Values.apiGateway.image.repository }}:{{ .Values.apiGateway.image.tag }}"
+          env:
+            {{- range $key, $value := .Values.apiGateway.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          ports:
+            - name: proxy
+              containerPort: 8000
+              protocol: TCP
+            - name: admin
+              containerPort: 8001
+              protocol: TCP
+          volumeMounts:
+            - name: kong-config
+              mountPath: /kong/declarative/
+              readOnly: true
+      volumes:
+        - name: kong-config
+          configMap:
+            name: {{ .Release.Name }}-kong-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.apiGateway.name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.apiGateway.port }}
+      targetPort: proxy
+      protocol: TCP
+      name: proxy
+  selector:
+    app: {{ .Values.apiGateway.name }}
+{{- end }}

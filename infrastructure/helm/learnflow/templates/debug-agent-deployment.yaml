@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-debug-agent
+  labels:
+    app: debug-agent
+spec:
+  replicas: {{ .Values.backend.debugAgent.replicas }}
+  selector:
+    matchLabels:
+      app: debug-agent
+  template:
+    metadata:
+      labels:
+        app: debug-agent
+    spec:
+      containers:
+        - name: debug-agent
+          image: "{{ .Values.backend.debugAgent.image.repository }}:{{ .Values.backend.debugAgent.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.backend.debugAgent.port }}
+          env:
+            - name: CEREBRAS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+            - name: KAFKA_BROKERS
+              value: "{{ .Release.Name }}-kafka:9092"
+          resources: {{- toYaml .Values.backend.debugAgent.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.debugAgent.port }}
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.debugAgent.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-debug-agent
+spec:
+  ports:
+    - port: {{ .Values.backend.debugAgent.port }}
+      targetPort: {{ .Values.backend.debugAgent.port }}
+  selector:
+    app: debug-agent

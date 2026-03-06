@@ -1,0 +1,26 @@
+import '@/styles/globals.css'
+import type { AppProps } from 'next/app'
+import { useState, useEffect } from 'react'
+
+export default function App({ Component, pageProps }: AppProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
+  return (
+    <>
+      <style jsx global>{`
+        html {
+          background: var(--bg-primary);
+        }
+      `}</style>
+      <Component {...pageProps} />
+    </>
+  )
+}

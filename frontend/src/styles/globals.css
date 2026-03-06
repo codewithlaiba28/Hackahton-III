@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700;900&family=Syne:wght@400;700;800&family=JetBrains+Mono&display=swap');
+@import "tailwindcss";
+
+
+/* LearnFlow Design Tokens - Neural Engine Futuristic Theme */
+@theme {
+  --color-border: rgba(255, 45, 120, 0.2);
+  --color-input: rgba(255, 255, 255, 0.04);
+  --color-ring: #ff2d78;
+  --color-background: #0a0a0f;
+  --color-foreground: #ffffff;
+
+  --color-card: rgba(255, 255, 255, 0.04);
+  --color-card-foreground: #ffffff;
+  --color-popover: #0a0a0f;
+  --color-popover-foreground: #ffffff;
+
+  --color-primary: #e8004d;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #0a0a0f;
+  --color-secondary-foreground: #ffffff;
+
+  --color-muted: rgba(255, 255, 255, 0.05);
+  --color-muted-foreground: #94a3b8;
+
+  --color-accent: #ff2d78;
+  --color-accent-foreground: #ffffff;
+
+  --color-neon-rose: #ff6b9d;
+  --color-neon-pink: #ff2d78;
+  --color-neon-crimson: #e8004d;
+
+  --color-status-beginner: #e8004d;
+  --color-status-learning: #f59e0b;
+  --color-status-proficient: #10b981;
+  --color-status-mastered: #3b82f6;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius: 0.75rem;
+
+  --font-display: 'Bebas Neue', 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  --radius: 12px;
+  --shadow-glow: 0 0 30px rgba(232, 0, 77, 0.2);
+  --shadow-neon: 0 0 20px rgba(255, 45, 120, 0.3);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Glassmorphism Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 45, 120, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+.glass-nav {
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 45, 120, 0.1);
+}
+
+/* Gradient Text */
+.text-gradient {
+  background: linear-gradient(135deg, #e8004d 0%, #ff2d78 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-rose {
+  background: linear-gradient(135deg, #ff2d78 0%, #ff6b9d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Aura Backgrounds */
+.aura-crimson {
+  background: radial-gradient(circle at 50% 50%, rgba(232, 0, 77, 0.15) 0%, transparent 70%);
+}
+
+.aura-magenta {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 45, 120, 0.1) 0%, transparent 70%);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 45, 120, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(255, 45, 120, 0.6);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff2d78;
+}
+
+/* Divider Lines */
+.divider-gradient {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 45, 120, 0.2) 50%, transparent 100%);
+}

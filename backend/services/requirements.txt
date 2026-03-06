@@ -1,0 +1,39 @@
+# LearnFlow Backend Services - Common Dependencies
+# Install with: pip install -r requirements.txt
+
+# Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Data Validation
+pydantic==2.5.3
+
+# Dapr - Distributed Application Runtime
+dapr==1.12.0
+dapr-ext-fastapi==1.12.0
+
+# Logging
+python-json-logger==2.0.7
+
+# AI Integration
+openai==1.12.0
+httpx==0.26.0
+
+# Message Queue
+kafka-python==2.0.2
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.25
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Testing (optional)
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0

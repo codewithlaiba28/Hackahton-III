@@ -1,0 +1,121 @@
+# LearnFlow Kafka Topics Configuration
+# Topics for event-driven communication between services
+
+topics:
+  # ==================== Learning Events ====================
+  - name: learning.events
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 604800000  # 7 days
+      cleanup.policy: delete
+    description: "General learning activity events"
+
+  # ==================== Code Submissions ====================
+  - name: code.submissions
+    partitions: 5
+    replication_factor: 1
+    config:
+      retention.ms: 2592000000  # 30 days
+      cleanup.policy: delete
+    description: "Student code submission events for processing and analysis"
+
+  # ==================== Progress Updates ====================
+  - name: progress.updates
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 604800000  # 7 days
+      cleanup.policy: compact
+    description: "Student progress update events for analytics"
+
+  # ==================== Student Struggles ====================
+  - name: student.struggles
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 259200000  # 3 days
+      cleanup.policy: delete
+    description: "Alerts when students are struggling and need teacher intervention"
+
+  # ==================== Exercise Events ====================
+  - name: exercise.assigned
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 604800000  # 7 days
+      cleanup.policy: delete
+    description: "Exercise assignment events"
+
+  - name: exercise.completed
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 604800000  # 7 days
+      cleanup.policy: delete
+    description: "Exercise completion events"
+
+  # ==================== Quiz Events ====================
+  - name: quiz.assigned
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 604800000  # 7 days
+      cleanup.policy: delete
+    description: "Quiz assignment events"
+
+  - name: quiz.completed
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 604800000  # 7 days
+      cleanup.policy: delete
+    description: "Quiz completion events with results"
+
+  # ==================== System Events ====================
+  - name: system.notifications
+    partitions: 3
+    replication_factor: 1
+    config:
+      retention.ms: 86400000  # 1 day
+      cleanup.policy: delete
+    description: "System notifications and alerts"
+
+  - name: system.audit
+    partitions: 5
+    replication_factor: 1
+    config:
+      retention.ms: 7776000000  # 90 days
+      cleanup.policy: delete
+    description: "Audit log for compliance and debugging"
+
+# ==================== Topic Groups ====================
+# Consumer groups for different services
+
+consumer_groups:
+  # Progress Agent consumes these to update mastery scores
+  - name: progress-processor
+    topics:
+      - code.submissions
+      - exercise.completed
+      - quiz.completed
+
+  # Debug Agent consumes these to detect struggles
+  - name: struggle-detector
+    topics:
+      - code.submissions
+      - exercise.completed
+
+  # Teacher Dashboard consumes these for real-time updates
+  - name: teacher-notifications
+    topics:
+      - student.struggles
+      - exercise.completed
+      - quiz.completed
+
+  # Analytics consumes these for reporting
+  - name: analytics-processor
+    topics:
+      - learning.events
+      - progress.updates
+      - code.submissions

@@ -1,0 +1,475 @@
+# Kafka Event Schemas: LearnFlow Platform
+
+**Created**: 2026-03-02
+**Purpose**: Define event schemas for Kafka topics
+
+---
+
+## Topic: learning.events
+
+**Purpose**: Track all student learning activities for analytics and progress tracking.
+
+### Schema
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LearningEvent",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "Student user ID"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "session_started",
+        "session_ended",
+        "question_asked",
+        "concept_viewed",
+        "example_run",
+        "note_created"
+      ],
+      "description": "Type of learning event"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp in UTC"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "moduleId": {
+          "type": "string",
+          "description": "Current module being studied"
+        },
+        "topic": {
+          "type": "string",
+          "description": "Specific topic within module"
+        },
+        "duration": {
+          "type": "integer",
+          "description": "Time spent in seconds (for session events)"
+        },
+        "questionText": {
+          "type": "string",
+          "description": "Question asked by student (for question_asked events)"
+        }
+      }
+    }
+  },
+  "required": ["eventId", "userId", "eventType", "timestamp"]
+}
+```
+
+### Example Event
+```json
+{
+  "eventId": "550e8400-e29b-41d4-a716-446655440000",
+  "userId": 12345,
+  "eventType": "question_asked",
+  "timestamp": "2026-03-02T14:30:00Z",
+  "metadata": {
+    "moduleId": "module-2",
+    "topic": "for-loops",
+    "questionText": "How do I iterate over a dictionary?"
+  }
+}
+```
+
+---
+
+## Topic: code.submissions
+
+**Purpose**: Track all code execution attempts for feedback and analysis.
+
+### Schema
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CodeSubmission",
+  "type": "object",
+  "properties": {
+    "submissionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "userId": {
+      "type": "integer"
+    },
+    "exerciseId": {
+      "type": "integer"
+    },
+    "code": {
+      "type": "string",
+      "description": "Student's submitted code"
+    },
+    "output": {
+      "type": "string",
+      "description": "Program execution output"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if execution failed"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "success", "error", "timeout"]
+    },
+    "executionTime": {
+      "type": "number",
+      "description": "Execution time in milliseconds"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "testsPassed": {
+      "type": "integer",
+      "description": "Number of test cases passed"
+    },
+    "totalTests": {
+      "type": "integer",
+      "description": "Total test cases"
+    }
+  },
+  "required": ["submissionId", "userId", "exerciseId", "code", "status", "timestamp"]
+}
+```
+
+### Example Event
+```json
+{
+  "submissionId": "660e8400-e29b-41d4-a716-446655440001",
+  "userId": 12345,
+  "exerciseId": 42,
+  "code": "for i in range(5):\n    print(i)",
+  "output": "0\n1\n2\n3\n4\n",
+  "status": "success",
+  "executionTime": 125,
+  "timestamp": "2026-03-02T14:35:00Z",
+  "testsPassed": 3,
+  "totalTests": 3
+}
+```
+
+---
+
+## Topic: exercise.completions
+
+**Purpose**: Track exercise completion for progress calculation.
+
+### Schema
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExerciseCompletion",
+  "type": "object",
+  "properties": {
+    "completionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "userId": {
+      "type": "integer"
+    },
+    "exerciseId": {
+      "type": "integer"
+    },
+    "moduleId": {
+      "type": "string",
+      "description": "Module this exercise belongs to"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Topic this exercise covers"
+    },
+    "score": {
+      "type": "number",
+      "format": "float",
+      "description": "Exercise score (0-100)"
+    },
+    "timeSpent": {
+      "type": "integer",
+      "description": "Time spent in seconds"
+    },
+    "attemptNumber": {
+      "type": "integer",
+      "description": "Which attempt this was (1 = first try)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["completionId", "userId", "exerciseId", "moduleId", "score", "timestamp"]
+}
+```
+
+### Example Event
+```json
+{
+  "completionId": "770e8400-e29b-41d4-a716-446655440002",
+  "userId": 12345,
+  "exerciseId": 42,
+  "moduleId": "module-2",
+  "topic": "for-loops",
+  "score": 100,
+  "timeSpent": 180,
+  "attemptNumber": 1,
+  "timestamp": "2026-03-02T14:35:00Z"
+}
+```
+
+---
+
+## Topic: student.struggles
+
+**Purpose**: Alert teachers when students need intervention.
+
+### Schema
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StruggleEvent",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "userId": {
+      "type": "integer"
+    },
+    "studentName": {
+      "type": "string",
+      "description": "Student name for quick identification"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "same_error_repeated",
+        "stuck_timeout",
+        "low_quiz_score",
+        "verbal_struggle",
+        "failed_executions"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "description": "Alert priority"
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "moduleId": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "errorMessages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "codeAttempts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timeStuck": {
+          "type": "integer",
+          "description": "Seconds spent on current problem"
+        }
+      }
+    },
+    "triggeredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "autoResolved": {
+      "type": "boolean",
+      "description": "Whether student solved it before teacher intervention"
+    }
+  },
+  "required": ["eventId", "userId", "studentName", "eventType", "severity", "triggeredAt"]
+}
+```
+
+### Example Event
+```json
+{
+  "eventId": "880e8400-e29b-41d4-a716-446655440003",
+  "userId": 67890,
+  "studentName": "James",
+  "eventType": "same_error_repeated",
+  "severity": "high",
+  "context": {
+    "moduleId": "module-3",
+    "topic": "list-comprehensions",
+    "errorMessages": [
+      "SyntaxError: invalid syntax",
+      "SyntaxError: invalid syntax",
+      "SyntaxError: invalid syntax"
+    ],
+    "codeAttempts": [
+      "[x for x in range(10]",
+      "[x for x range(10)]",
+      "[x for in range(10)]"
+    ],
+    "timeStuck": 420
+  },
+  "triggeredAt": "2026-03-02T15:00:00Z",
+  "autoResolved": false
+}
+```
+
+---
+
+## Topic: progress.updates
+
+**Purpose**: Real-time mastery score updates for dashboards.
+
+### Schema
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProgressUpdate",
+  "type": "object",
+  "properties": {
+    "updateId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "userId": {
+      "type": "integer"
+    },
+    "moduleId": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "previousMastery": {
+      "type": "number",
+      "format": "float",
+      "description": "Mastery score before update"
+    },
+    "newMastery": {
+      "type": "number",
+      "format": "float",
+      "description": "Mastery score after update"
+    },
+    "previousStatus": {
+      "type": "string",
+      "enum": ["beginner", "learning", "proficient", "mastered"]
+    },
+    "newStatus": {
+      "type": "string",
+      "enum": ["beginner", "learning", "proficient", "mastered"]
+    },
+    "statusChanged": {
+      "type": "boolean",
+      "description": "Whether status level changed"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reason": {
+      "type": "string",
+      "enum": ["exercise_completed", "quiz_submitted", "code_quality_improved", "consistency_bonus"]
+    }
+  },
+  "required": ["updateId", "userId", "moduleId", "newMastery", "newStatus", "timestamp"]
+}
+```
+
+### Example Event
+```json
+{
+  "updateId": "990e8400-e29b-41d4-a716-446655440004",
+  "userId": 12345,
+  "moduleId": "module-2",
+  "topic": "for-loops",
+  "previousMastery": 65.5,
+  "newMastery": 72.0,
+  "previousStatus": "learning",
+  "newStatus": "proficient",
+  "statusChanged": true,
+  "timestamp": "2026-03-02T14:35:00Z",
+  "reason": "exercise_completed"
+}
+```
+
+---
+
+## Topic Configuration
+
+### Partition Strategy
+```yaml
+topics:
+  learning.events:
+    partitions: 3
+    replicationFactor: 1
+    retentionMs: 604800000  # 7 days
+    
+  code.submissions:
+    partitions: 3
+    replicationFactor: 1
+    retentionMs: 2592000000  # 30 days
+    
+  exercise.completions:
+    partitions: 3
+    replicationFactor: 1
+    retentionMs: 31536000000  # 1 year
+    
+  student.struggles:
+    partitions: 1
+    replicationFactor: 1
+    retentionMs: 259200000  # 3 days (alerts are ephemeral)
+    
+  progress.updates:
+    partitions: 3
+    replicationFactor: 1
+    retentionMs: 604800000  # 7 days (for real-time dashboards)
+```
+
+### Consumer Groups
+```yaml
+consumerGroups:
+  - groupId: progress-tracker
+    topics: [exercise.completions, code.submissions]
+    purpose: Update student mastery scores
+    
+  - groupId: struggle-detector
+    topics: [code.submissions, learning.events]
+    purpose: Detect when students need help
+    
+  - groupId: analytics-pipeline
+    topics: [learning.events, exercise.completions, progress.updates]
+    purpose: Feed data warehouse for reporting
+    
+  - groupId: notification-service
+    topics: [student.struggles]
+    purpose: Send alerts to teachers
+```
+
+---
+
+## Next Steps
+
+1. ✅ API contracts complete (api.yaml)
+2. ✅ Event schemas complete (events.yaml)
+3. Create quickstart.md for developer onboarding
+4. Proceed to /sp.tasks for implementation task breakdown

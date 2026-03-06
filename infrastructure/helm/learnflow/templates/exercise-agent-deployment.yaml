@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-exercise-agent
+  labels:
+    app: exercise-agent
+spec:
+  replicas: {{ .Values.backend.exerciseAgent.replicas }}
+  selector:
+    matchLabels:
+      app: exercise-agent
+  template:
+    metadata:
+      labels:
+        app: exercise-agent
+    spec:
+      containers:
+        - name: exercise-agent
+          image: "{{ .Values.backend.exerciseAgent.image.repository }}:{{ .Values.backend.exerciseAgent.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.backend.exerciseAgent.port }}
+          env:
+            - name: CEREBRAS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: database-url
+          resources: {{- toYaml .Values.backend.exerciseAgent.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.exerciseAgent.port }}
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.exerciseAgent.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-exercise-agent
+spec:
+  ports:
+    - port: {{ .Values.backend.exerciseAgent.port }}
+      targetPort: {{ .Values.backend.exerciseAgent.port }}
+  selector:
+    app: exercise-agent

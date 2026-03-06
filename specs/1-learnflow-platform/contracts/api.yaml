@@ -1,0 +1,538 @@
+openapi: 3.0.3
+info:
+  title: LearnFlow Platform API
+  description: AI-powered Python tutoring platform API
+  version: 1.0.0
+  contact:
+    name: LearnFlow Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: http://localhost:3000/api
+    description: Frontend proxy
+
+tags:
+  - name: Authentication
+    description: User login and session management
+  - name: Student
+    description: Student-facing endpoints
+  - name: Teacher
+    description: Teacher-facing endpoints
+  - name: AI Agents
+    description: AI tutoring agent endpoints
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /dashboard:
+    get:
+      tags:
+        - Student
+      summary: Get student dashboard with progress overview
+      operationId: getDashboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+
+  /chat:
+    post:
+      tags:
+        - AI Agents
+      summary: Send message to AI tutor
+      operationId: sendChatMessage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessage'
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '500':
+          description: AI service error
+
+  /code/execute:
+    post:
+      tags:
+        - Student
+      summary: Execute Python code in sandbox
+      operationId: executeCode
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeExecutionRequest'
+      responses:
+        '200':
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeExecutionResult'
+        '400':
+          description: Invalid code
+        '504':
+          description: Execution timeout
+
+  /exercise/submit:
+    post:
+      tags:
+        - Student
+      summary: Submit exercise solution
+      operationId: submitExercise
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExerciseSubmission'
+      responses:
+        '200':
+          description: Submission result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResult'
+
+  /progress:
+    get:
+      tags:
+        - Student
+      summary: Get student progress and mastery scores
+      operationId: getProgress
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Progress'
+
+  /quiz/submit:
+    post:
+      tags:
+        - Student
+      summary: Submit quiz answers
+      operationId: submitQuiz
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizSubmission'
+      responses:
+        '200':
+          description: Quiz result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResult'
+
+  /teacher/dashboard:
+    get:
+      tags:
+        - Teacher
+      summary: Get teacher dashboard with class analytics
+      operationId: getTeacherDashboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Teacher dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherDashboard'
+
+  /teacher/alerts:
+    get:
+      tags:
+        - Teacher
+      summary: Get struggle alerts for students
+      operationId: getStruggleAlerts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of struggle alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StruggleAlert'
+
+  /exercise/generate:
+    post:
+      tags:
+        - Teacher
+      summary: Generate custom exercises via AI
+      operationId: generateExercises
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExerciseGenerationRequest'
+      responses:
+        '200':
+          description: Generated exercises
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exercise'
+
+  /exercise/assign:
+    post:
+      tags:
+        - Teacher
+      summary: Assign exercise to student
+      operationId: assignExercise
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExerciseAssignment'
+      responses:
+        '200':
+          description: Assignment successful
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [student, teacher]
+
+    Dashboard:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModuleProgress'
+        recentActivity:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+
+    ModuleProgress:
+      type: object
+      properties:
+        moduleId:
+          type: string
+        moduleName:
+          type: string
+        masteryScore:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [beginner, learning, proficient, mastered]
+
+    Activity:
+      type: object
+      properties:
+        type:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ChatMessage:
+      type: object
+      properties:
+        message:
+          type: string
+        context:
+          type: object
+          properties:
+            currentModule:
+              type: string
+            recentCode:
+              type: string
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+        codeExample:
+          type: string
+        followUpQuestions:
+          type: array
+          items:
+            type: string
+
+    CodeExecutionRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        exerciseId:
+          type: integer
+
+    CodeExecutionResult:
+      type: object
+      properties:
+        output:
+          type: string
+        error:
+          type: string
+        executionTime:
+          type: number
+        status:
+          type: string
+          enum: [success, error, timeout]
+
+    ExerciseSubmission:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        code:
+          type: string
+
+    SubmissionResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        feedback:
+          type: string
+        testsPassed:
+          type: integer
+        totalTests:
+          type: integer
+
+    Progress:
+      type: object
+      properties:
+        moduleId:
+          type: string
+        topic:
+          type: string
+        masteryScore:
+          type: number
+          format: float
+        status:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+
+    QuizSubmission:
+      type: object
+      properties:
+        quizId:
+          type: string
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: integer
+              answer:
+                type: string
+
+    QuizResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        totalQuestions:
+          type: integer
+        correctAnswers:
+          type: array
+          items:
+            type: integer
+        masteryUpdate:
+          type: object
+          properties:
+            previousScore:
+              type: number
+            newScore:
+              type: number
+
+    TeacherDashboard:
+      type: object
+      properties:
+        className:
+          type: string
+        totalStudents:
+          type: integer
+        classAverage:
+          type: number
+        moduleBreakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassModuleStats'
+        strugglingStudents:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentAlert'
+
+    ClassModuleStats:
+      type: object
+      properties:
+        moduleId:
+          type: string
+        averageMastery:
+          type: number
+        masteredCount:
+          type: integer
+        strugglingCount:
+          type: integer
+
+    StudentAlert:
+      type: object
+      properties:
+        studentId:
+          type: integer
+        studentName:
+          type: string
+        module:
+          type: string
+        issue:
+          type: string
+
+    StruggleAlert:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        studentName:
+          type: string
+        eventType:
+          type: string
+        context:
+          type: string
+        triggeredAt:
+          type: string
+          format: date-time
+
+    ExerciseGenerationRequest:
+      type: object
+      properties:
+        topic:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        count:
+          type: integer
+          default: 3
+
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+        starterCode:
+          type: string
+        expectedOutput:
+          type: string
+
+    ExerciseAssignment:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        studentId:
+          type: integer

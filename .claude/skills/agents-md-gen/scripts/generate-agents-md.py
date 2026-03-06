@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""
+AGENTS.md Generator Script
+
+Generates a comprehensive AGENTS.md file for a repository.
+This script executes via MCP code execution pattern - minimal tokens in context.
+"""
+
+import os
+import sys
+import json
+from pathlib import Path
+from datetime import datetime
+
+
+def detect_project_structure(root_path: str) -> dict:
+    """Detect project structure and technologies."""
+    structure = {
+        "directories": [],
+        "files": [],
+        "technologies": [],
+        "package_files": []
+    }
+    
+    root = Path(root_path)
+    
+    # Common directories to scan
+    scan_dirs = ['src', 'lib', 'app', 'components', 'services', 'api', 'tests', 'docs']
+    
+    for item in root.iterdir():
+        if item.is_dir() and not item.name.startswith('.'):
+            structure["directories"].append(item.name)
+        elif item.is_file():
+            structure["files"].append(item.name)
+            
+            # Detect package/dependency files
+            if item.name in ['package.json', 'requirements.txt', 'Cargo.toml', 
+                           'go.mod', 'pom.xml', 'build.gradle']:
+                structure["package_files"].append(item.name)
+    
+    # Detect technologies
+    if (root / 'package.json').exists():
+        structure["technologies"].append("Node.js/TypeScript")
+    if (root / 'requirements.txt').exists() or (root / 'pyproject.toml').exists():
+        structure["technologies"].append("Python")
+    if (root / 'Dockerfile').exists():
+        structure["technologies"].append("Docker")
+    if (root / 'docker-compose.yml').exists():
+        structure["technologies"].append("Docker Compose")
+    if (root / 'Chart.yaml').exists() or (root / 'helm').exists():
+        structure["technologies"].append("Kubernetes/Helm")
+    
+    return structure
+
+
+def generate_agents_md(root_path: str) -> str:
+    """Generate AGENTS.md content."""
+    structure = detect_project_structure(root_path)
+    project_name = Path(root_path).name
+    
+    content = f"""# {project_name} - AI Agent Guide
+
+> Auto-generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+## Project Overview
+
+This repository contains code and configuration for the project.
+Use this file to understand the project structure and development conventions.
+
+## Tech Stack
+
+"""
+    
+    if structure["technologies"]:
+        for tech in structure["technologies"]:
+            content += f"- {tech}\n"
+    else:
+        content += "- Technologies not yet detected\n"
+    
+    content += """
+## Directory Structure
+
+```
+"""
+    
+    # Add directory tree (simplified)
+    for dir_name in sorted(structure["directories"])[:15]:  # Limit to 15 dirs
+        content += f"{dir_name}/\n"
+    
+    content += """```
+
+## Development Conventions
+
+### Code Style
+- **Python**: PEP 8 with type hints
+- **TypeScript/JavaScript**: ESLint recommended config
+- **Formatting**: Consistent indentation (2 spaces for JS/TS, 4 for Python)
+
+### Testing
+- Run tests before committing changes
+- Maintain test coverage for critical paths
+- Use descriptive test names
+
+### Commit Messages
+Follow Conventional Commits format:
+```
+<type>(<scope>): <description>
+
+[optional body]
+```
+
+Types: feat, fix, docs, style, refactor, test, chore
+
+## AI Agent Guidelines
+
+### Before Making Changes
+1. Read relevant existing code to understand patterns
+2. Check for existing tests covering the area
+3. Identify the smallest viable change
+
+### After Making Changes
+1. Run the test suite
+2. Verify no linting errors
+3. Update documentation if needed
+
+### File Operations
+- Always use absolute paths
+- Create parent directories if needed
+- Preserve existing code style and formatting
+
+## Key Commands
+
+"""
+    
+    # Add common commands based on detected technologies
+    if "Python" in structure["technologies"]:
+        content += """```bash
+# Python
+python -m pytest              # Run tests
+python -m pip install -r requirements.txt  # Install dependencies
+```
+"""
+    
+    if "Node.js/TypeScript" in structure["technologies"]:
+        content += """```bash
+# Node.js/TypeScript
+npm test                      # Run tests
+npm install                   # Install dependencies
+npm run build                 # Build project
+```
+"""
+    
+    if "Docker" in structure["technologies"]:
+        content += """```bash
+# Docker
+docker build -t app .         # Build image
+docker-compose up             # Start services
+```
+"""
+    
+    if "Kubernetes/Helm" in structure["technologies"]:
+        content += """```bash
+# Kubernetes
+kubectl apply -f manifests/   # Deploy to K8s
+helm install app ./chart      # Deploy with Helm
+```
+"""
+    
+    content += """
+## Questions?
+
+If unsure about implementation details:
+1. Check existing code for similar patterns
+2. Review test files for expected behavior
+3. Consult project documentation in docs/
+
+---
+
+*This AGENTS.md was generated by the agents-md-gen skill*
+"""
+    
+    return content
+
+
+def main():
+    """Main entry point."""
+    # Default to current directory if no argument provided
+    root_path = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
+    
+    if not os.path.isdir(root_path):
+        print(f"Error: {root_path} is not a valid directory")
+        sys.exit(1)
+    
+    # Generate content
+    content = generate_agents_md(root_path)
+    
+    # Write to AGENTS.md
+    output_path = os.path.join(root_path, "AGENTS.md")
+    
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"✓ AGENTS.md generated at {output_path}")
+    except Exception as e:
+        print(f"✗ Error writing AGENTS.md: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

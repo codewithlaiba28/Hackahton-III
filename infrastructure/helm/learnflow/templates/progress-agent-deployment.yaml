@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-progress-agent
+  labels:
+    app: progress-agent
+spec:
+  replicas: {{ .Values.backend.progressAgent.replicas }}
+  selector:
+    matchLabels:
+      app: progress-agent
+  template:
+    metadata:
+      labels:
+        app: progress-agent
+    spec:
+      containers:
+        - name: progress-agent
+          image: "{{ .Values.backend.progressAgent.image.repository }}:{{ .Values.backend.progressAgent.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.backend.progressAgent.port }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: database-url
+            - name: KAFKA_BROKERS
+              value: "{{ .Release.Name }}-kafka:9092"
+          resources: {{- toYaml .Values.backend.progressAgent.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.progressAgent.port }}
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.progressAgent.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-progress-agent
+spec:
+  ports:
+    - port: {{ .Values.backend.progressAgent.port }}
+      targetPort: {{ .Values.backend.progressAgent.port }}
+  selector:
+    app: progress-agent

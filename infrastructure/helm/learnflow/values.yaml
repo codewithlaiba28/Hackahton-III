@@ -1,0 +1,284 @@
+# Default values for LearnFlow Platform
+# This is a YAML-formatted file.
+
+# ==================== Global Configuration ====================
+global:
+  registry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# ==================== Replica Counts ====================
+replicaCount: 1
+
+# ==================== Image Configuration ====================
+image:
+  repository: learnflow
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+# ==================== Service Accounts ====================
+serviceAccount:
+  create: true
+  name: "learnflow-sa"
+  annotations: {}
+
+# ==================== Pod Security Context ====================
+podSecurityContext:
+  fsGroup: 1000
+
+# ==================== Security Context ====================
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+# ==================== Ingress Configuration ====================
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: learnflow.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ==================== Resource Limits ====================
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# ==================== Node Selector ====================
+nodeSelector: {}
+
+# ==================== Tolerations ====================
+tolerations: []
+
+# ==================== Affinity ====================
+affinity: {}
+
+# ==================== Frontend Configuration ====================
+frontend:
+  name: frontend
+  port: 3000
+  image:
+    repository: learnflow-frontend
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  env:
+    NEXT_PUBLIC_API_URL: "http://learnflow-api-gateway:80"
+
+# ==================== Backend Services Configuration ====================
+backend:
+  # Triage Agent (API Gateway / Router)
+  triageAgent:
+    name: triage-agent
+    port: 8001
+    image:
+      repository: learnflow-triage-agent
+      tag: "latest"
+    replicas: 2
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+  # Concepts Agent
+  conceptsAgent:
+    name: concepts-agent
+    port: 8002
+    image:
+      repository: learnflow-concepts-agent
+      tag: "latest"
+    replicas: 2
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 300m
+        memory: 384Mi
+
+  # Debug Agent
+  debugAgent:
+    name: debug-agent
+    port: 8003
+    image:
+      repository: learnflow-debug-agent
+      tag: "latest"
+    replicas: 2
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 300m
+        memory: 384Mi
+
+  # Exercise Agent
+  exerciseAgent:
+    name: exercise-agent
+    port: 8004
+    image:
+      repository: learnflow-exercise-agent
+      tag: "latest"
+    replicas: 2
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 300m
+        memory: 384Mi
+
+  # Progress Agent
+  progressAgent:
+    name: progress-agent
+    port: 8005
+    image:
+      repository: learnflow-progress-agent
+      tag: "latest"
+    replicas: 2
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+  # Code Review Agent
+  codeReviewAgent:
+    name: code-review-agent
+    port: 8006
+    image:
+      repository: learnflow-code-review-agent
+      tag: "latest"
+    replicas: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+# ==================== API Gateway (Kong) ====================
+apiGateway:
+  enabled: true
+  name: api-gateway
+  port: 80
+  image:
+    repository: kong
+    tag: "3.4"
+  env:
+    KONG_DATABASE: "off"
+    KONG_DECLARATIVE_CONFIG: "/kong/declarative/kong.yml"
+    KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+    KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+    KONG_PROXY_ERROR_LOG: "/dev/stderr"
+    KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+
+# ==================== Kafka Configuration ====================
+kafka:
+  enabled: true
+  replicaCount: 1
+  zookeeper:
+    replicaCount: 1
+  persistence:
+    enabled: true
+    size: 8Gi
+  config:
+    autoCreateTopicsEnable: true
+    defaultReplicationFactor: 1
+    offsetsTopicReplicationFactor: 1
+
+# ==================== PostgreSQL Configuration ====================
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "learnflow-admin"
+    username: "learnflow"
+    password: "learnflow-password"
+    database: "learnflow"
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# ==================== Redis (for Dapr Statestore) ====================
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 2Gi
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# ==================== Dapr Configuration ====================
+dapr:
+  enabled: false  # Enable if using Dapr sidecar
+  sidecarImage: "daprio/daprd:1.12"
+  httpPort: 3500
+  grpcPort: 50001
+  appPort: 8000
+  logLevel: "info"
+
+# ==================== Environment Variables ====================
+env:
+  APP_ENV: "production"
+  LOG_LEVEL: "INFO"
+  OPENAI_MODEL: "gpt-3.5-turbo"
+  # OPENAI_API_KEY should be set via secret
+
+# ==================== Secrets ====================
+secrets:
+  create: true
+  jwtSecretKey: "change-me-in-production"
+  openaiApiKey: ""  # Set via --set or values file
+  databasePassword: "learnflow-password"
+
+# ==================== Monitoring ====================
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+  prometheusRules:
+    enabled: false
+
+# ==================== Logging ====================
+logging:
+  enabled: true
+  level: "INFO"
+  format: "json"

@@ -1,0 +1,16 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: learnflow-pubsub
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  - name: brokers
+    value: "kafka-kafka:9092"
+  - name: consumerGroup
+    value: "learnflow-services"
+  - name: publishMaxRetries
+    value: "3"
+  - name: authRequired
+    value: "false"

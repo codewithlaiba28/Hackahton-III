@@ -1,0 +1,242 @@
+# LearnFlow Docker Compose - Local Development
+# Start all services with: docker-compose up -d
+
+services:
+  # ==================== Frontend ====================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - BETTER_AUTH_URL=http://localhost:3000
+      - BETTER_AUTH_SECRET=learnflow-super-secret-key-for-better-auth-2026-long-enough-32char
+      - DATABASE_URL=postgresql://learnflow:learnflow-password@postgres:5432/learnflow
+      - DB_SSL=false
+    depends_on:
+      - triage-agent
+    networks:
+      - learnflow-network
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+
+  # ==================== Backend Services ====================
+
+  # Triage Agent (API Gateway / Router)
+  triage-agent:
+    build:
+      context: ./backend/services
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: triage-agent
+    ports:
+      - "8001:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./backend/services/.env
+    command: uvicorn triage-agent.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - concepts-agent
+      - debug-agent
+      - exercise-agent
+      - code-review-agent
+    networks:
+      - learnflow-network
+
+  # Concepts Agent
+  concepts-agent:
+    build:
+      context: ./backend/services
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: concepts-agent
+    ports:
+      - "8002:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./backend/services/.env
+    command: uvicorn concepts-agent.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - learnflow-network
+    volumes:
+      - ./backend/services:/app:ro
+
+  # Debug Agent
+  debug-agent:
+    build:
+      context: ./backend/services
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: debug-agent
+    ports:
+      - "8003:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./backend/services/.env
+    command: uvicorn debug-agent.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - kafka
+    networks:
+      - learnflow-network
+    volumes:
+      - ./backend/services:/app:ro
+
+  # Exercise Agent
+  exercise-agent:
+    build:
+      context: ./backend/services
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: exercise-agent
+    ports:
+      - "8004:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./backend/services/.env
+    command: uvicorn exercise-agent.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - kafka
+    networks:
+      - learnflow-network
+    volumes:
+      - ./backend/services:/app:ro
+
+  # Progress Agent
+  progress-agent:
+    build:
+      context: ./backend/services
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: progress-agent
+    ports:
+      - "8005:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./backend/services/.env
+    command: uvicorn progress-agent.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - learnflow-network
+    volumes:
+      - ./backend/services:/app:ro
+
+  # Code Review Agent
+  code-review-agent:
+    build:
+      context: ./backend/services
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: code-review-agent
+    ports:
+      - "8006:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - ./backend/services/.env
+    command: uvicorn code-review-agent.main:app --host 0.0.0.0 --port 8000
+    networks:
+      - learnflow-network
+    volumes:
+      - ./backend/services:/app:ro
+
+  # ==================== Infrastructure ====================
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks:
+      - learnflow-network
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=learnflow
+      - POSTGRES_PASSWORD=learnflow-password
+      - POSTGRES_DB=learnflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - learnflow-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U learnflow -d learnflow" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (for Dapr statestore)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - learnflow-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Zookeeper (required for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    volumes:
+      - zookeeper-data:/bitnami/zookeeper
+    networks:
+      - learnflow-network
+
+networks:
+  learnflow-network:
+    driver: bridge
+
+volumes:
+  kafka-data:
+  postgres-data:
+  redis-data:
+  zookeeper-data:

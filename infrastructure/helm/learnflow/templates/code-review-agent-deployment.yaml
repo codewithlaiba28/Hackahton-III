@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-code-review-agent
+  labels:
+    app: code-review-agent
+spec:
+  replicas: {{ .Values.backend.codeReviewAgent.replicas }}
+  selector:
+    matchLabels:
+      app: code-review-agent
+  template:
+    metadata:
+      labels:
+        app: code-review-agent
+    spec:
+      containers:
+        - name: code-review-agent
+          image: "{{ .Values.backend.codeReviewAgent.image.repository }}:{{ .Values.backend.codeReviewAgent.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.backend.codeReviewAgent.port }}
+          env:
+            - name: CEREBRAS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+          resources: {{- toYaml .Values.backend.codeReviewAgent.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.codeReviewAgent.port }}
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.codeReviewAgent.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-code-review-agent
+spec:
+  ports:
+    - port: {{ .Values.backend.codeReviewAgent.port }}
+      targetPort: {{ .Values.backend.codeReviewAgent.port }}
+  selector:
+    app: code-review-agent
