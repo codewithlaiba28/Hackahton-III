@@ -15,6 +15,7 @@ import {
     Fingerprint,
     Cpu
 } from 'lucide-react';
+import { authClient } from '@/lib/auth-client';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -27,46 +28,82 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // TEST: Show alert to confirm function is being called
+        alert('Registration function called! Check console for logs.');
+        
+        console.log('=== FORM SUBMIT TRIGGERED ===');
+        console.log('Event type:', e.type);
+        console.log('Is loading before:', isLoading);
+        
         setError('');
         setIsLoading(true);
 
         try {
-            // Call our backend API directly instead of Better Auth client
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
-            const response = await fetch(`${apiUrl}/api/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                    name,
-                    role: role,
-                }),
+            console.log('=== REGISTRATION STARTED ===');
+            console.log('Form data:', { email, name, role });
+            console.log('API URL:', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+
+            // Use Better Auth signUp - NO callbackURL to prevent auto-redirect
+            const { data, error: signUpError } = await authClient.signUp.email({
+                email,
+                password,
+                name,
             });
 
-            const data = await response.json();
+            console.log('=== SIGN UP RESPONSE ===');
+            console.log('Data:', data);
+            console.log('Error:', signUpError);
 
-            if (!response.ok) {
-                throw new Error(data.detail || 'Registration failed');
+            if (signUpError || !data) {
+                console.error('Registration failed with error:', signUpError);
+                throw new Error(signUpError?.message || 'Registration failed');
             }
 
-            // Store the token and user info
-            localStorage.setItem('learnflow_token', data.access_token);
-            localStorage.setItem('learnflow_user', JSON.stringify(data.user));
+            console.log('User registered successfully:', data.user);
+            console.log('User ID:', data.user.id);
+            console.log('User email:', data.user.email);
 
-            // Redirect based on role
-            const userRole = data.user.role?.toLowerCase() || role;
-            if (userRole === 'teacher' || userRole === 'instructor') {
-                router.push('/teacher/dashboard');
+            // Store role in localStorage (Better Auth doesn't have role field by default)
+            localStorage.setItem('learnflow_user_role', role);
+            console.log('Role stored in localStorage:', role);
+            console.log('All localStorage items:', localStorage);
+            
+            // Verify localStorage
+            const storedRole = localStorage.getItem('learnflow_user_role');
+            console.log('Verified stored role:', storedRole);
+            
+            // Wait a bit for session cookie to be set
+            console.log('Waiting 500ms for session cookie...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            console.log('=== PREPARING REDIRECT ===');
+            console.log('Role:', role);
+            console.log('Current URL:', window.location.href);
+            console.log('Window location object:', window.location);
+
+            // Force redirect using window.location to ensure full page reload
+            if (role === 'teacher' || role === 'instructor') {
+                console.log('Redirecting to TEACHER dashboard...');
+                window.location.href = '/teacher/dashboard';
             } else {
-                router.push('/student/dashboard');
+                console.log('Redirecting to STUDENT dashboard...');
+                window.location.href = '/student/dashboard';
             }
+            
+            console.log('Redirect initiated to:', window.location.href);
+            return;
         } catch (err: any) {
+            console.error('=== REGISTRATION ERROR ===');
+            console.error('Error type:', typeof err);
+            console.error('Error message:', err.message);
+            console.error('Error stack:', err.stack);
             setError(err.message || 'Neural link initialization failed.');
+            alert('Registration error: ' + err.message);
         } finally {
             setIsLoading(false);
+            console.log('=== REGISTRATION HANDLER COMPLETE ===');
+            console.log('Is loading:', false);
         }
     };
 
@@ -143,6 +180,7 @@ export default function RegisterPage() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
+                                    autoComplete="name"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-14 pr-4 py-3 text-white placeholder:text-muted-foreground/30 focus:outline-none focus:border-neon-pink/50 focus:bg-white/10 transition-all font-mono text-xs tracking-wide"
                                     placeholder="NEURAL_OPERATOR_01"
                                 />
@@ -160,6 +198,7 @@ export default function RegisterPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
+                                    autoComplete="email"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-14 pr-4 py-3 text-white placeholder:text-muted-foreground/30 focus:outline-none focus:border-neon-pink/50 focus:bg-white/10 transition-all font-mono text-xs tracking-wide"
                                     placeholder="IDENTIFIER@ENGINE.NET"
                                 />
@@ -177,6 +216,7 @@ export default function RegisterPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
+                                    autoComplete="new-password"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-14 pr-4 py-3 text-white placeholder:text-muted-foreground/30 focus:outline-none focus:border-neon-pink/50 focus:bg-white/10 transition-all font-mono text-xs tracking-wide"
                                     placeholder="••••••••••••"
                                 />
@@ -197,8 +237,25 @@ export default function RegisterPage() {
                             )}
                         </AnimatePresence>
 
+                        {/* DEBUG BUTTON - Test if clicks are working */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                alert('DEBUG BUTTON CLICKED! Console check karo.');
+                                console.log('=== DEBUG BUTTON TEST ===');
+                                console.log('Form state:', { name, email, role, isLoading });
+                            }}
+                            className="w-full bg-yellow-600 text-white text-[8px] font-bold uppercase tracking-[0.2em] py-2 mb-2 rounded hover:bg-yellow-500"
+                        >
+                            🔍 TEST BUTTON (Click to Debug)
+                        </button>
+
                         <button
                             type="submit"
+                            onClick={() => {
+                                console.log('=== SUBMIT BUTTON CLICKED ===');
+                                console.log('isLoading:', isLoading);
+                            }}
                             disabled={isLoading}
                             className="w-full relative group mt-4"
                         >

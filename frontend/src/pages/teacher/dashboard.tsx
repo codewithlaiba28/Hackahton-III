@@ -68,10 +68,20 @@ export default function TeacherDashboard() {
     // Wait for session to load
     if (isSessionLoading) return;
 
-    if (!session || (session.user as any).role?.toUpperCase() !== 'TEACHER') {
+    if (!session) {
       router.push('/login');
       return;
     }
+    
+    // Get role from localStorage
+    const storedRole = localStorage.getItem('learnflow_user_role') || 'student';
+    
+    if (storedRole !== 'teacher' && storedRole !== 'instructor') {
+      router.push('/student/dashboard');
+      return;
+    }
+    
+    console.log('Teacher dashboard loaded with role:', storedRole);
     loadDashboardData();
   }, [session, isSessionLoading]);
 

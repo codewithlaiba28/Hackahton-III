@@ -68,6 +68,10 @@ export default function StudentDashboard() {
       return;
     }
 
+    // Get role from localStorage
+    const storedRole = localStorage.getItem('learnflow_user_role') || 'student';
+    console.log('Student dashboard loaded with role:', storedRole);
+    
     loadProgress(session.user.id);
   }, [session, isSessionLoading]);
 

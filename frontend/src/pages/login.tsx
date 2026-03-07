@@ -16,6 +16,7 @@ import {
   Fingerprint,
   Cpu
 } from 'lucide-react';
+import { authClient } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,41 +32,58 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Call our backend API directly
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      console.log('=== LOGIN STARTED ===');
+      console.log('Login credentials:', { email, role });
+
+      // Use Better Auth signIn - NO callbackURL
+      const { data, error: signInError } = await authClient.signIn.email({
+        email,
+        password,
       });
 
-      const data = await response.json();
+      console.log('=== SIGN IN RESPONSE ===');
+      console.log('Data:', data);
+      console.log('Error:', signInError);
 
-      if (!response.ok) {
-        throw new Error(data.detail || 'Login failed');
+      if (signInError || !data) {
+        console.error('Login failed with error:', signInError);
+        throw new Error(signInError?.message || 'Login failed');
       }
 
-      // Store the token and user info
-      localStorage.setItem('learnflow_token', data.access_token);
-      localStorage.setItem('learnflow_user', JSON.stringify(data.user));
+      console.log('User logged in successfully:', data.user);
 
-      // Redirect based on role
-      const userRole = data.user.role?.toLowerCase();
-      if (userRole === 'teacher' || userRole === 'instructor') {
-        router.push('/teacher/dashboard');
+      // Get the stored role from localStorage
+      const storedRole = localStorage.getItem('learnflow_user_role') || 'student';
+      console.log('Retrieved role from localStorage:', storedRole);
+      
+      // Wait a bit for session cookie to be set
+      console.log('Waiting 500ms for session cookie...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('=== PREPARING REDIRECT ===');
+      console.log('Role:', storedRole);
+      console.log('Current URL:', window.location.href);
+      
+      // Force redirect using window.location to ensure full page reload with session
+      if (storedRole === 'teacher' || storedRole === 'instructor') {
+        console.log('Redirecting to TEACHER dashboard...');
+        window.location.href = '/teacher/dashboard';
       } else {
-        router.push('/student/dashboard');
+        console.log('Redirecting to STUDENT dashboard...');
+        window.location.href = '/student/dashboard';
       }
+      
+      console.log('Redirect initiated to:', window.location.href);
+      return;
     } catch (err: any) {
+      console.error('=== LOGIN ERROR ===');
+      console.error('Error type:', typeof err);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
       setError(err.message || 'Neural link synchronization failed. Verification required.');
-      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
+      console.log('=== LOGIN HANDLER COMPLETE ===');
     }
   };
 
