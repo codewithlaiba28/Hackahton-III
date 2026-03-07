@@ -32,7 +32,8 @@ export default function RegisterPage() {
 
         try {
             // Call our backend API directly instead of Better Auth client
-            const response = await fetch('http://localhost:8001/api/auth/register', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+            const response = await fetch(`${apiUrl}/api/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
