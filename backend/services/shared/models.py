@@ -1,7 +1,13 @@
 from sqlalchemy import Column, String, Float, Integer, DateTime, Boolean, ForeignKey, Text, CheckConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from enum import Enum
 from .database import Base
+
+class UserRole(str, Enum):
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
 
 class User(Base):
     __tablename__ = "users"
