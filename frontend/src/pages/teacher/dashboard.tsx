@@ -88,7 +88,7 @@ export default function TeacherDashboard() {
 
 
   const loadDashboardData = async () => {
-    setIsLoading(true);
+    setIsDataLoading(true);
     try {
       const [analyticsData, alertsData, studentsData, statsData] = await Promise.all([
         apiService.getTeacherAnalytics(),

@@ -28,14 +28,7 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // TEST: Show alert to confirm function is being called
-        alert('Registration function called! Check console for logs.');
-        
-        console.log('=== FORM SUBMIT TRIGGERED ===');
-        console.log('Event type:', e.type);
-        console.log('Is loading before:', isLoading);
-        
+
         setError('');
         setIsLoading(true);
 
@@ -44,12 +37,12 @@ export default function RegisterPage() {
             console.log('Form data:', { email, name, role });
             console.log('API URL:', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
 
-            // Use Better Auth signUp - NO callbackURL to prevent auto-redirect
+            // Use Better Auth signUp with additional fields
             const { data, error: signUpError } = await authClient.signUp.email({
                 email,
                 password,
                 name,
-            });
+            } as any);
 
             console.log('=== SIGN UP RESPONSE ===');
             console.log('Data:', data);
@@ -68,29 +61,29 @@ export default function RegisterPage() {
             localStorage.setItem('learnflow_user_role', role);
             console.log('Role stored in localStorage:', role);
             console.log('All localStorage items:', localStorage);
-            
+
             // Verify localStorage
             const storedRole = localStorage.getItem('learnflow_user_role');
             console.log('Verified stored role:', storedRole);
-            
+
             // Wait a bit for session cookie to be set
             console.log('Waiting 500ms for session cookie...');
             await new Promise(resolve => setTimeout(resolve, 500));
-            
+
             console.log('=== PREPARING REDIRECT ===');
             console.log('Role:', role);
             console.log('Current URL:', window.location.href);
             console.log('Window location object:', window.location);
 
             // Force redirect using window.location to ensure full page reload
-            if (role === 'teacher' || role === 'instructor') {
+            if (role === 'teacher') {
                 console.log('Redirecting to TEACHER dashboard...');
                 window.location.href = '/teacher/dashboard';
             } else {
                 console.log('Redirecting to STUDENT dashboard...');
                 window.location.href = '/student/dashboard';
             }
-            
+
             console.log('Redirect initiated to:', window.location.href);
             return;
         } catch (err: any) {
@@ -99,7 +92,7 @@ export default function RegisterPage() {
             console.error('Error message:', err.message);
             console.error('Error stack:', err.stack);
             setError(err.message || 'Neural link initialization failed.');
-            alert('Registration error: ' + err.message);
+            setError(err.message || 'Neural link initialization failed.');
         } finally {
             setIsLoading(false);
             console.log('=== REGISTRATION HANDLER COMPLETE ===');
@@ -237,18 +230,6 @@ export default function RegisterPage() {
                             )}
                         </AnimatePresence>
 
-                        {/* DEBUG BUTTON - Test if clicks are working */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                alert('DEBUG BUTTON CLICKED! Console check karo.');
-                                console.log('=== DEBUG BUTTON TEST ===');
-                                console.log('Form state:', { name, email, role, isLoading });
-                            }}
-                            className="w-full bg-yellow-600 text-white text-[8px] font-bold uppercase tracking-[0.2em] py-2 mb-2 rounded hover:bg-yellow-500"
-                        >
-                            🔍 TEST BUTTON (Click to Debug)
-                        </button>
 
                         <button
                             type="submit"

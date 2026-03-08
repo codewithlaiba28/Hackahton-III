@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     token TEXT UNIQUE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    ip_address TEXT,
+    user_agent TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
@@ -49,3 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_verifications_identifier ON verifications(identif
 -- Add email_verified column to users table if not exists
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS image TEXT;
+
+-- Add missing columns to sessions table (for existing installations)
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_address TEXT;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent TEXT;
