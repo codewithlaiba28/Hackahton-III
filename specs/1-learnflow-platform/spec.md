@@ -2,8 +2,8 @@
 
 **Feature Branch**: `1-learnflow-platform`
 **Created**: 2026-03-02
-**Status**: Draft
-**Input**: AI-powered Python tutoring platform for students and teachers
+**Status**: Implemented
+**Input**: AI-powered Python tutoring platform for students and teachers (Hackathon III)
 
 ## User Scenarios & Testing
 
@@ -82,6 +82,8 @@ Both students and teachers can view detailed progress dashboards. Students see t
 - **FR-013**: System MUST support 8 Python modules: Basics, Control Flow, Data Structures, Functions, OOP, Files, Errors, Libraries
 - **FR-014**: System MUST allow students to take quizzes and see scores immediately
 - **FR-015**: System MUST persist all user data (progress, submissions, quiz results) across sessions
+- **FR-016**: System MUST use Better Auth for secure user authentication and role management
+- **FR-017**: System MUST integrate with Cerebras AI for high-performance inference of tutoring agents
 
 ### Key Entities
 
